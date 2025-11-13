@@ -21,7 +21,14 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-
+          
+      - name: Debug - list repo files
+        run: |
+         echo "Current directory:"
+         pwd
+         echo "Repo contents:"
+         ls -R .
+      
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
