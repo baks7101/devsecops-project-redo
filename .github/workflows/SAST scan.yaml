@@ -1,41 +1,23 @@
 name: SAST Scan Project 3
-
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-
 jobs:
   sast:
     name: SAST Scan
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
-      # v4 is the latest, and we fetch the full history just to avoid any weirdness
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
+      - name: Install dependencies
+        uses: actions/setup-python@v3
         with:
-          fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-
-      - name: Debug - list repo files
-        run: |
-          echo "Current directory:"
-          pwd
-          echo "Repo contents:"
-          ls -R .
-
+          python-version: 3.x
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
-        with:
-          languages: python
-          build-mode: none
-          config-file: ./.github/codeql/codeql-config.yml
-
+        with: 
+          language: python
       - name: Run CodeQL Analysis
         uses: github/codeql-action/analyze@v3
