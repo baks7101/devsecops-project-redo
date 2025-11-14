@@ -6,48 +6,46 @@ on:
       - main
 
 jobs:
-  deploy-and-scan:
-    name: Pull Docker Image and Install Trivy
+  sca-trivy:
+    name: Build and scan with Trivy
     runs-on: ubuntu-latest
+
     steps:
+      # 1. Checkout your vulnerable Flask app + Dockerfile + requirements.txt
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
+      # 2. Set up Docker buildx so we can build the image from THIS repo
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Pull Docker Image
-        run: docker pull baks7101/dockerhub:test
-
-      - name: Install Trivy
+      # 3. Build Docker image FROM your app in this repo
+      #    (assumes Dockerfile is in repo root and uses app.py + requirements.txt)
+      - name: Build Docker image
         run: |
-          sudo apt-get update
-          sudo apt-get install -y curl
-          curl -sfL https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-          echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update
-          sudo apt-get install -y trivy
+          docker build -t baks7101/dockerhub:baks .
 
-  scan-image:
-    name: Image Scan with Trivy
-    runs-on: ubuntu-latest
-    needs: deploy-and-scan
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      # 4. Trivy SCA on the repo (filesystem scan)
+      #    This looks at requirements.txt etc.
+      - name: Trivy SCA on repository (filesystem)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH,MEDIUM,LOW'
+          ignore-unfixed: true
 
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+      # 5. Trivy scan on the Docker image we just built
+      - name: Trivy scan on Docker image
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           scan-type: 'image'
-          scanners: 'vuln'
           image-ref: 'baks7101/dockerhub:baks'
-          hide-progress: false
           format: 'table'
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH,MEDIUM,LOW'
           ignore-unfixed: true
+
+  
