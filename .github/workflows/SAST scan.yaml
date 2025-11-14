@@ -1,23 +1,44 @@
-name: SAST Scan Project 3
+name: SAST Scan
+
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+
 jobs:
   sast:
     name: SAST Scan
     runs-on: ubuntu-latest
+
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Install dependencies
-        uses: actions/setup-python@v3
+        uses: actions/checkout@v4
         with:
-          python-version: 3.x
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Debug - list repo files
+        run: |
+          echo "PWD:"
+          pwd
+          echo "Repo tree:"
+          ls -R .
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
-        with: 
-          language: python
+        with:
+          languages: python
+          source-root: .            # explicitly say "repo root"
+
       - name: Run CodeQL Analysis
         uses: github/codeql-action/analyze@v3
