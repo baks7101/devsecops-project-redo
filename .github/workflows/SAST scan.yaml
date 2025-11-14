@@ -38,7 +38,8 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: python
-          source-root: .            # explicitly say "repo root"
+          source-root: .      # repo root; this is enough
 
       - name: Run CodeQL Analysis
         uses: github/codeql-action/analyze@v3
+
